@@ -1,0 +1,44 @@
+FROM golang:alpine AS build-env
+
+LABEL maintainer="Alan Tai <alan.tai@riverbed.com>"
+
+### Stage 1.
+ADD web_apis_state.go /app/web_apis_state.go
+ADD apis /go/src/apis
+ADD dbs /go/src/dbs
+
+# Update apk repositories
+RUN echo "http://dl-3.alpinelinux.org/alpine/v3.8/main" > /etc/apk/repositories && \
+  echo "http://dl-3.alpinelinux.org/alpine/v3.8/community" >> /etc/apk/repositories
+
+# Install dependencies
+RUN apk add --no-cache --update git \
+  && go get -u github.com/gorilla/websocket \
+    github.com/go-redis/redis \
+  && apk del git \
+  && go build -o /app/web /app/web_apis_state.go
+
+# remove unnecessary stuff
+RUN rm -rf /var/lib/apt/lists/* \
+  /var/cache/apk/* \
+  /usr/share/man \
+  /tmp/*
+
+
+### Stage 2.
+FROM alpine
+WORKDIR /app
+COPY --from=build-env /app/web /app/
+
+# Install dependencies
+RUN apk add --no-cache dumb-init
+
+# remove unnecessary stuff
+RUN rm -rf /var/lib/apt/lists/* \
+  /var/cache/apk/* \
+  /usr/share/man \
+  /tmp/*
+
+ENV PORT 3002
+EXPOSE 3002
+ENTRYPOINT ["dumb-init", "./web"]
