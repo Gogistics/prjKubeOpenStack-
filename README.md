@@ -1,6 +1,9 @@
 # Deploy Kubernetes cluster on OpenStack
 This tutorial aims to guide the developers how to deploy a Kubernetes cluster on OpenStack, the solution may also work for private clouds. One of advantages of deploying Kubernetes cluster from scratch because the developers will be able to seemlessly set up Kubernetes clusters on different platforms, especially private ones. In this tutorial, the Kubernetes cluster will be deployed in OpenStack inside the private cloud.
 
+References:
+[Basic and DSR load balancing with network load balancers (NLB)](https://cloud.ibm.com/docs/containers?topic=containers-loadbalancer)
+
 ## The steps of deploying Kubernetes cluster are (say the OpenStack is running properly):
 1. Create a network and a host server (this step is skipped because this tutorial is for learning deployment of Kubernets cluster from scratch)
 2. Create the servers that will run Kubernets master and workers. (I suggest at least creating three servers, one is running as the master, and the other two are running as the workers.)
@@ -12,79 +15,55 @@ $ openstack server create --image <image-id> --flavor <flavor-id> --network <net
 Reference:
 [OpenStack CLI cheatsheet](https://docs.openstack.org/ocata/user-guide/cli-cheat-sheet.html)
 
-3. Provision the servers
-3-1. Disable swap memory usage because Kubernetes doesn't support memory swap
-```sh
-$ swapoff -a
-```
-Note: you may need to comment out the line for memory swap in /etc/fstab
-```sh
-# e.g.
-...
-/dev/sdb         none            swap    sw 0    0
-...
-```
+3. Provision the servers to support Kubernetes
+Please refer to provision/guide.md
+
+4. Deployment of Redis cluster
+4-1. Write yaml files
+4-2. Kubectl create/apply the yaml files
 
 Reference:
-[Why disable swap on kubernetes](https://serverfault.com/questions/881517/why-disable-swap-on-kubernetes)
+[Deploying PHP Guestbook application with Redis](https://kubernetes.io/docs/tutorials/stateless-application/guestbook/#scale-the-web-frontend)
 
-3-2. Update /etc/hosts by adding the mapping of IPs and server names
+5. Development of applications in Golang (WIP)
+In this tutorial, I wrote the applications in Golang. Feel free to write the applications in your favirote languages
+
+
+Build the Golang application
 ```sh
-# in my case, the following lines are added to /etc/hosts
-100.100.1.241   kube-master
-100.100.1.242   kube-worker-1
-100.100.1.243   kube-worker-2
-100.100.1.244   kube-worker-3
+$ docker build -t alantai/web-state:v0.1.1 -f dockerfiles/Dockerfile.apis_state .
 ```
 
-3-3. Install Docker in the servers
+Tag the Docker image
 ```sh
-$ sudo apt update && \
-  sudo apt install -y apt-transport-https ca-certificates curl gnupg2 software-properties-common && \
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
-  sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && \
-  sudo apt update && \
-  sudo apt install -y docker-ce
-
-# check if Docker is running properly
-$ sudo systemctl status docker
+$ docker tag alantai/web-state:v0.1.1 quay.io/ocedo/scm-ui:web-state-v0.1.1
 ```
 
-3-4. Install Kubernetes
+Push to Docker registry
 ```sh
-# for both master and worker
-$ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-  echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | tee /etc/apt/sources.list.d/kubernetes.list && \
-  sudo apt update && \
-  sudo apt install -y kubelet kubeadm kubectl
-
-# for master only, it's recommended to spin up the Kubernetes master with 2 CPU cores; but in my case, the master only has one CPU core
-$ kubeadm init  --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=200.200.1.241 --token-ttl=0 --ignore-preflight-errors=NumCPU
-
-# move config file to home dir
-$ sudo mkdir -p $HOME/.kube && \
-  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && \
-  sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
-# deploy the CNI to your cluster; in this tutorial, I deployed Calico and the other option is Flannel
-$  kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
-
-# or Flannel
-$ kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-
-# check if all kube-system pods are successfully running (it takes couple of seconds to bring up all pods); once everything is up, move on to provision Kubernetes workers
-$ kubectl get pods -n kube-system
-
-
-# for worker only, once the initialization is done, note down the command for Kubernetes workers to join the cluster
-...
-kubeadm join 100.100.1.241:6443 --token <token-hash>  --discovery-token-ca-cert-hash <cert-hash> 
-...
-
-
-# note: If you get the error that token is expired while executing the command to join the cluster, you need to generate a new token.
-$ kubeadm token create
+$ docker push quay.io/ocedo/scm-ui:web-state-v0.1.1
 ```
 
-4. Development of applications in Golang (WIP)
+6. Deploy the Golang application and the service
+6-1. go to the kube-master console and update the image tag in the yaml file
+6-2. make sure the LoadBalancer IP is exported and run the following command
+```sh
+$ envsubst < kube-apis-state-quay.yaml | kubectl apply -f -
+```
 
+References:
+[dumb-init](https://github.com/Yelp/dumb-init)
+[Introducing dumb-init, an init system for Docker containers](https://engineeringblog.yelp.com/2016/01/dumb-init-an-init-for-docker.html)
+
+6. Manage the Kubernetes cluster
+Here I just wrote some simple examples. Feel free to try otehr Kubernetes mechanisms.
+
+```sh
+# scale deployment
+$ kubectl scale deployment apis-state --replicas=6
+
+# rollback deployment
+$ kubectl rollout status deployment/<deployment-name>
+$ kubectl rollout history deployment/<deployment-name>
+$ kubectl rollout undo deployment/<deployment-name>
+```

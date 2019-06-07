@@ -1,3 +1,4 @@
+# default blueprint
 FROM golang:alpine
 
 LABEL maintainer="Alan Tai <alan.tai@riverbed.com>"

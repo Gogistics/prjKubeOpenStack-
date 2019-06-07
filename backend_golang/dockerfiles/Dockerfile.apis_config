@@ -1,3 +1,4 @@
+# blueprint for api application of configuration
 FROM golang:alpine AS build-env
 
 LABEL maintainer="Alan Tai <alan.tai@riverbed.com>"

@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: apis-config-service
+  labels:
+    run: apis-config
+spec:
+  type: LoadBalancer
+  sessionAffinity: ClientIP
+  ports:
+  - port: 3001
+    targetPort: 3001
+    protocol: TCP
+    name: http
+  selector:
+    run: apis-config
+  externalIPs:
+  - $EXTERNAL_IP
+
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: apis-config
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        run: apis-config
+        app: scm-config-apis
+        tier: backend
+    spec:
+      containers:
+      - name: apis-config
+        image: alantai/web-config:v0.1.0
+        resources:
+          requests:
+            cpu: 150m
+            memory: 100Mi
+        ports:
+        - containerPort: 3001
+        - containerPort: 443

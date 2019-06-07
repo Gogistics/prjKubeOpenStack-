@@ -34,7 +34,7 @@ func StateHandler(w http.ResponseWriter, r *http.Request) {
   if errRead != nil {
     panic(errRead)
   }
-  fmt.Println("name: ", respVal)
+  fmt.Println("name (from Redis slave): ", respVal)
   // \Testing of Redis operations
 
   if r.Method != "POST" {
@@ -51,13 +51,36 @@ func StateHandler(w http.ResponseWriter, r *http.Request) {
     http.Error(w, err.Error(), 500)
     return
   }
+
+  // Parse request body
+  var data = make(map[string]interface{})
+  json.Unmarshal([]byte(b), &data)
+
+  // a string slice to hold the keys
+  var keys = make([]string, len(data))
+
+  // iteration counter
+  i := 0
+
+  // copy data's keys into keys
+  for s, _ := range data {
+    keys[i] = s
+    i++
+  }
+
+  // output result to STDOUT
+  fmt.Printf("%#v\n", keys)
+  // \Parse request body
+
+  // print body string
   rbody := ioutil.NopCloser(bytes.NewBuffer(b))
   log.Printf("BODY: %q", rbody)
+
 
   // reply to the request
   res := &stateResp{
     Key: 1,
-    Items: []string{"state", subUrl, "three", string(b)}}
+    Items: []string{"state", subUrl, string(b)}}
 
   js, err := json.Marshal(res)
   if err != nil {

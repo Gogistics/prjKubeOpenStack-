@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: apis-state-service
+  labels:
+    run: apis-state
+spec:
+  type: LoadBalancer
+  sessionAffinity: ClientIP
+  ports:
+  - port: 3002
+    targetPort: 3002
+    protocol: TCP
+    name: http
+  selector:
+    run: apis-state
+  externalIPs:
+  - $EXTERNAL_IP
+
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: apis-state
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        run: apis-state
+        app: scm-state-apis
+        tier: backend
+    spec:
+      containers:
+      - name: apis-state
+        image: alantai/web-state:v0.1.0
+        resources:
+          requests:
+            cpu: 150m
+            memory: 100Mi
+        ports:
+        - containerPort: 3002
+        - containerPort: 443
