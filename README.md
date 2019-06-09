@@ -16,9 +16,11 @@ Reference:
 [OpenStack CLI cheatsheet](https://docs.openstack.org/ocata/user-guide/cli-cheat-sheet.html)
 
 3. Provision the servers to support Kubernetes
+
 Please refer to provision/guide.md
 
 4. Deployment of Redis cluster
+
 4-1. Write yaml files
 4-2. Kubectl create/apply the yaml files
 

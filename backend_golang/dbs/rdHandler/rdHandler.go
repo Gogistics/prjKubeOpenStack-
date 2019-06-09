@@ -31,11 +31,35 @@ func (handler RedisdbWrite) Set(key *string, val *string) error {
   return err
 }
 
-func (handler RedisdbRead) Get(key *string) (string, error) {
+func (handler RedisdbWrite) HSet(hash *string, key *string, val *string) error {
   // Testing of Redis write/read
+  err := redisdbWrite.HSet(*hash, *key, *val).Err()
+  if err != nil {
+    panic(err)
+  }
+  return err
+}
+
+func (handler RedisdbRead) Get(key *string) (string, error) {
   val, err := redisdbRead.Get(*key).Result()
   if err != nil {
     panic(err)
   }
   return val, err
+}
+
+func (handler RedisdbRead) HGet(key *string, field *string) (string, error) {
+  val, err := redisdbRead.HGet(*key, *field).Result()
+  if err != nil {
+    panic(err)
+  }
+  return val, err
+}
+
+func (handler RedisdbRead) HGetAll(key *string) (map[string]string, error) {
+  m, err := redisdbRead.HGetAll(*key).Result()
+  if err != nil {
+    panic(err)
+  }
+  return m, err
 }

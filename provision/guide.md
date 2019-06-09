@@ -76,7 +76,7 @@ $ kubeadm token create
 5. Configuration for private Docker regiestry
 ```sh
 # Create a new secret with provided information
-$ kubectl create secret docker-registry <secret-key> --docker-server=quay.io --docker-username=<username> --docker-password=<password>
+$ kubectl create secret docker-registry <secret-key> --docker-server=<docker-registry-server> --docker-username=<username> --docker-password=<password>
 secret/<secret-key> created
 ...
 

@@ -1,11 +1,11 @@
 package config
 
 import (
-  "log"
+  // "log"
+  // "bytes"
   "net/http"
   "encoding/json"
   "io/ioutil"
-  "bytes"
   "strings"
   "fmt"
   "dbs/rdHandler"
@@ -19,29 +19,20 @@ type configResp struct {
 var BaseUrlOfConfigHandler = "/kube-apis/config/"
 
 func ConfigHandler(w http.ResponseWriter, r *http.Request) {
-  // Testing of Redis operations
-  name := "product"
-  val := "scm"
-  redisWrite := rdHandler.RedisdbWrite {}
-  redisRead := rdHandler.RedisdbRead {}
-
-  errWrite := redisWrite.Set(&name, &val);
-  if errWrite != nil {
-    panic(errWrite)
-  }
-  respVal, errRead := redisRead.Get(&name);
-  if errRead != nil {
-    panic(errRead)
-  }
-  fmt.Println("name: ", respVal)
-  // \Testing of Redis operations
-
-  if r.Method != "POST" {
+  if r.Method == "POST" {
+    post(w, r)
+  } else if r.Method == "GET" {
+    get(w, r)
+  } else {
     http.Error(w, "API only handles the requests via POST", http.StatusNotFound)
     return
   }
+}
 
-  subUrl := strings.TrimPrefix(r.URL.Path, BaseUrlOfConfigHandler)
+
+func post(w http.ResponseWriter, r *http.Request) {
+  redisWrite := rdHandler.RedisdbWrite {}
+  hash := strings.TrimPrefix(r.URL.Path, BaseUrlOfConfigHandler)
 
   // Read body
   b, err := ioutil.ReadAll(r.Body)
@@ -50,15 +41,61 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
     http.Error(w, err.Error(), 500)
     return
   }
-  rbody := ioutil.NopCloser(bytes.NewBuffer(b))
-  log.Printf("BODY: %q", rbody)
+
+  // Parse request body
+  var data = make(map[string]interface{})
+  json.Unmarshal([]byte(b), &data)
+
+  // a string slice to hold the keys
+  var keys = make([]string, len(data))
+
+  // iteration counter
+  i := 0
+
+  // copy data's keys into keys
+  for key, _ := range data {
+    keys[i] = key
+    i++
+
+    // write data into redis secondary index
+    // fmt.Printf("data[key]: %q", data[key])
+    val := fmt.Sprintf("%v", data[key])
+    redisWrite.HSet(&hash, &key, &val);
+  }
+
+  // output result to STDOUT
+  // fmt.Printf("%#v\n", keys)
+  // \Parse request body
+
+  // print body string
+  // rbody := ioutil.NopCloser(bytes.NewBuffer(b))
+  // log.Printf("BODY: %q", rbody)
 
   // reply to the request
   res := &configResp{
     Key: 1,
-    Items: []string{"config", subUrl, "three", string(b)}}
+    Items: []string{"config", hash, string(b)}}
 
   js, err := json.Marshal(res)
+  if err != nil {
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  w.Header().Set("Content-Type", "application/json")
+  w.Write(js)
+}
+
+func get(w http.ResponseWriter, r *http.Request) {
+  redisRead := rdHandler.RedisdbRead {}
+  // read data
+  hash := strings.TrimPrefix(r.URL.Path, BaseUrlOfConfigHandler)
+  // get cf3 status
+  respMap, errRead := redisRead.HGetAll(&hash);
+  if errRead != nil {
+    panic(errRead)
+  }
+  fmt.Println("states: ", respMap)
+  js, err := json.Marshal(respMap)
   if err != nil {
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return
