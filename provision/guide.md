@@ -47,7 +47,7 @@ $ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - 
   sudo apt install -y kubelet kubeadm kubectl
 
 # for master only, it's recommended to spin up the Kubernetes master with 2 CPU cores; but in my case, the master only has one CPU core
-$ kubeadm init  --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=200.200.1.241 --token-ttl=0 --ignore-preflight-errors=NumCPU
+$ kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=200.200.1.241 --token-ttl=0 --ignore-preflight-errors=NumCPU
 
 # move config file to home dir
 $ sudo mkdir -p $HOME/.kube && \
@@ -55,7 +55,7 @@ $ sudo mkdir -p $HOME/.kube && \
   sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 # deploy the CNI to your cluster; in this tutorial, I deployed Calico and the other option is Flannel
-$  kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
+$ kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
 
 # or Flannel
 $ kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
@@ -82,6 +82,9 @@ secret/<secret-key> created
 
 # Then edit serviceaccounts
 $ kubectl edit serviceaccounts default
+```
+
+Next step may not be necessary if the secret key is already under imagePullSecrets
 
 Add
 
@@ -90,7 +93,6 @@ imagePullSecrets:
 - name: <secret-key>
 ```
 To the end after `Secrets`
-```
 
 References:
 https://stackoverflow.com/questions/32726923/pulling-images-from-private-registry-in-kubernetes

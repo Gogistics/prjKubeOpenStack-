@@ -4,6 +4,13 @@ This tutorial aims to guide the developers how to deploy a Kubernetes cluster on
 References:
 [Basic and DSR load balancing with network load balancers (NLB)](https://cloud.ibm.com/docs/containers?topic=containers-loadbalancer)
 
+Before starting the deployment and provisioning, you need to know the relationships between things:
+1. The relationship between the network created by OpenStack and the Kubernetes cluster
+2. The relationship between the network created by OpenStack and the WAN
+
+Diagram: https://drive.google.com/file/d/1k3Pnq6coix-Q6D3cSNubWNAg6xZwGcav/view?usp=sharing
+
+
 ## The steps of deploying Kubernetes cluster are (say the OpenStack is running properly):
 1. Create a network and a host server (this step is skipped because this tutorial is for learning deployment of Kubernets cluster from scratch)
 2. Create the servers that will run Kubernets master and workers. (I suggest at least creating three servers, one is running as the master, and the other two are running as the workers.)
