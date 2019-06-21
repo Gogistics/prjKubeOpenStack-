@@ -8,7 +8,7 @@ Before starting the deployment and provisioning, you need to know the relationsh
 1. The relationship between the network created by OpenStack and the Kubernetes cluster
 2. The relationship between the network created by OpenStack and the WAN
 
-Diagram: https://drive.google.com/file/d/1k3Pnq6coix-Q6D3cSNubWNAg6xZwGcav/view?usp=sharing
+See the [diagram](https://drive.google.com/file/d/1k3Pnq6coix-Q6D3cSNubWNAg6xZwGcav/view?usp=sharing) as reference.
 
 
 ## The steps of deploying Kubernetes cluster are (say the OpenStack is running properly):
