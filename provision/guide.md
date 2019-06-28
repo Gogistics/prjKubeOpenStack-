@@ -54,6 +54,8 @@ $ sudo mkdir -p $HOME/.kube && \
   sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && \
   sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
+Note: if you reset the initialization, remember to remove `$HOME/.kube` first, and then execute the commands above.
+
 # deploy the CNI to your cluster; in this tutorial, I deployed Calico and the other option is Flannel
 $ kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
 
